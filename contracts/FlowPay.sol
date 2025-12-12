@@ -110,8 +110,7 @@ contract FlowPay is AccessControl, ReentrancyGuard {
     if (params.depositAmount == 0) revert InvalidDepositAmount();
     
     // check time
-    uint256 duration = params.stopTime - params.startTime;
-    if (duration <= 0) revert InvalidTimeframe();
+    if (params.stopTime <= params.startTime) revert InvalidTimeframe();
   }
 
   // ================================== CORE LOGIC ===================================
@@ -157,6 +156,12 @@ contract FlowPay is AccessControl, ReentrancyGuard {
 
     // claimable amount is total earned minus already withdrawn amount
     return totalEarned - s.withdrawnAmount;
+  }
+
+  // =================================== VIEW FUNCTIONS ===================================
+  function getStream(uint256 streamId) external view returns (Stream memory) {
+    FlowPayStorageStruct storage fps = _flowPayStorage();
+    return fps.streams[streamId];
   }
 
   // =================================== ADMIN FUNCTIONS ===================================
@@ -297,11 +302,13 @@ contract FlowPay is AccessControl, ReentrancyGuard {
     if (stream.isMilestoneReleased) {
       revert MilestoneAlreadyReleased();
     }
-    if (stream.milestoneAmount == 0) {
-      revert MilestoneNotSet();
-    }
+
     if (stream.status == StreamStatus.CANCELLED) {
       revert StreamIsCancelled();
+    }
+    
+    if (stream.milestoneAmount == 0) {
+      revert MilestoneNotSet();
     }
 
     stream.isMilestoneReleased = true;
