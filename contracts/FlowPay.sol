@@ -164,13 +164,36 @@ contract FlowPay is AccessControl, ReentrancyGuard {
     return fps.streams[streamId];
   }
 
-  // =================================== ADMIN FUNCTIONS ===================================
-  function addRole(bytes32 role, address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-    _grantRole(role, account);
+  function getPaymentToken() external view returns (address) {
+    FlowPayStorageStruct storage fps = _flowPayStorage();
+    return address(fps.paymentToken);
   }
 
-  function removeRole(bytes32 role, address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-    _revokeRole(role, account);
+  function getTotalStreams() external view returns (uint256) {
+    FlowPayStorageStruct storage fps = _flowPayStorage();
+    return fps.nextStreamId - 1;
+  }
+
+
+  // =================================== ADMIN FUNCTIONS ===================================
+  function addRole(bytes32 role, address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    for(uint256 i = 0; i < accounts.length; i++) {
+      _grantRole(role, accounts[i]);
+    }
+  }
+
+  function removeRole(bytes32 role, address[] calldata accounts) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    for(uint256 i = 0; i < accounts.length; i++) {
+      _revokeRole(role, accounts[i]);
+    }
+  }
+
+  function setPaymentToken(address _paymentToken) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    if (_paymentToken == address(0)) {
+      revert InvalidTokenAddress();
+    }
+    FlowPayStorageStruct storage fps = _flowPayStorage();
+    fps.paymentToken = IERC20(_paymentToken);
   }
 
   // =================================== CREATOR FUNCTIONS ===================================
